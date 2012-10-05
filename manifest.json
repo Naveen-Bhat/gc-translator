@@ -1,7 +1,7 @@
 {
  "name": "Translator",
  "manifest_version": 2,
- "version": "1.1.5",
+ "version": "1.1.6",
  "description": "Translates selected text into opted language.",
  "browser_action": {
    "default_title": "Translates selected text into opted language",

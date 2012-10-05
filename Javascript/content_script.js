@@ -38,14 +38,9 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 	}
 	else if(request.method == "dockPopup"){
 		injectPopupToPage();
-		sendResponse({});
     }
 	else if(request.method == "undockPopup"){
 		removePopupFromPage();
-		sendResponse({});
-	}
-	else{
-		sendResponse({}); // snub them.
 	}
 });
 
@@ -173,4 +168,5 @@ function injectPopupToPage(){
 // Remove the Popup/Topbar from page.
 function removePopupFromPage(){
 	$('#topbar').remove();
+	$('body').removeAttr('style');
 }
