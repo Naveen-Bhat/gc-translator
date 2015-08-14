@@ -1,0 +1,1 @@
+An extension for Google-Chrome which translates selected text into opted language.
