@@ -88,60 +88,40 @@ function translateSelectedText() {
 	if(doTranslation){
 		chrome.tabs.getSelected(null, function(tab) {
 			// Get the selected text. 
-			chrome.tabs.sendMessage(tab.id, {method: "translateSelectedText"}, function (response) {
-				if(response.SelectedText){
-					var select = document.getElementById("targetLanguage");
-					
-					// Yield the request to http://translate.google.com/
-					var request = new XMLHttpRequest();
-					request.open(
-					"GET",
-					"http://translate.google.com/translate_a/t?client=t&text="
-					+ response.SelectedText
-					+ "&hl=en&sl=auto&tl="
-					+ select.children[select.selectedIndex].value,
-					true);
-					
-					// Hndle the responce of http://translate.google.com/
-					request.onreadystatechange = function() { 
-						if(request.readyState==4) { 
-							var skip = true;
-							if(response.SelectedText.indexOf(",") != -1 || response.SelectedText.indexOf(".") != -1){
-								skip = false;
-							}
-							var translatedTexts = request.responseText.substr(0,request.responseText.search(/,"\w{2}",/)).split("],[");
-							
-							var translatedText = "";
-							for(i=0; i<translatedTexts.length; i++)
-							{
-								var textTokens = translatedTexts[i].split("\",\"");
-								translatedText = translatedText + textTokens[0].replace(/[[[["']/g,"");
-								if(skip){
-									break;
-								}
-							}
-							
-							// Set the source language.
-							var sourceLanguage = document.getElementById('SourceLanguage');
-							
-							for (var i = 0; i < select.children.length; i++) {
-								var child = select.children[i];
-								if(child.value == request.responseText.match(/,"\w{2}",/).toString().replace(/,/g,"").replace(/"/g,"")){
-									sourceLanguage.innerHTML = localStorage["sourceLanguage"] = child.text;
-									break;
-								}
-							}
-							
-							// Display the result.
-							var text = document.getElementById('TranslatedTextViewer');
-							text.innerHTML = localStorage["translatedText"] = translatedText.replace("]]]]","");
-							
-							// Disable the loading image.
-							loaderImage.style.display = 'none';
-						}
-					}
-					
-					request.send(null);
+		    chrome.tabs.sendMessage(tab.id, { method: "translateSelectedText" }, function (response) {
+		        debugger;
+			    if (response.SelectedText) {
+
+			        var select = document.getElementById("targetLanguage");
+
+			        $.get('https://translate.google.com/translate_a/single?client=t&hl=en&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&dt=at&ie=UTF-8&oe=UTF-8'
+                    + '&sl=auto'
+                    + '&tl=' + select.children[select.selectedIndex].value
+                    + '&q=' + response.SelectedText
+                   , function (translatedRawData) {
+
+                       // IMPORTANT: eval is evil but we trust google response :)
+                       var translatedData = eval(translatedRawData);
+
+                       // Set the source language.
+                       var sourceLanguage = document.getElementById('SourceLanguage');
+
+                       if (translatedData && translatedData .length && translatedData[0].length && translatedData[0][0].length) {
+                           $('#TranslatedTextViewer').html(translatedData[0][0][0]);
+                           localStorage["translatedText"] = translatedData[0][0][0];
+                           if (translatedData.length >= 3) {
+                               var sourceLang = $('#targetLanguage option[value="' + translatedData[2] + '"]').html();
+                               $('#SourceLanguage').html(sourceLang);
+                               localStorage["sourceLanguage"] = sourceLang;
+                           }
+                       } else {
+                           $('#TranslatedTextViewer').html('');
+                           $('#SourceLanguage').html('unkown');
+                       }
+
+                       // Disable the loading image.
+                       loaderImage.style.display = 'none';
+                   }, "text");
 				}
 				else{
 					var text = document.getElementById('TranslatedTextViewer');
