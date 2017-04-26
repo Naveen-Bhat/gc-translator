@@ -88,40 +88,29 @@ function translateSelectedText() {
 	if(doTranslation){
 		chrome.tabs.getSelected(null, function(tab) {
 			// Get the selected text. 
-		    chrome.tabs.sendMessage(tab.id, { method: "translateSelectedText" }, function (response) {
-		        debugger;
+		    chrome.tabs.sendMessage(tab.id, { method: "translateSelectedText" }, function (response) {		        
 			    if (response.SelectedText) {
-
 			        var select = document.getElementById("targetLanguage");
+					$.get('https://translation.googleapis.com/language/translate/v2?key=SecretKeyGoesHere'
+						+ '&target=' + select.children[select.selectedIndex].value
+						+ '&q=' + response.SelectedText
+						, function (result) {							
+							result = JSON.parse(result);
+							if (result && result.data && result.data.translations && result.data.translations.length) {
+								var translation = result.data.translations[0];
+								$('#TranslatedTextViewer').html(translation.translatedText);
+								localStorage["translatedText"] = translation.translatedText;
+								var sourceLang = $('#targetLanguage option[value="' + translation.detectedSourceLanguage + '"]').html();
+								$('#SourceLanguage').html(sourceLang);
+								localStorage["sourceLanguage"] = sourceLang;
+							}    else {
+								$('#TranslatedTextViewer').html('');
+								$('#SourceLanguage').html('unkown');
+							}
 
-			        $.get('https://translate.google.com/translate_a/single?client=t&hl=en&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&dt=at&ie=UTF-8&oe=UTF-8'
-                    + '&sl=auto'
-                    + '&tl=' + select.children[select.selectedIndex].value
-                    + '&q=' + response.SelectedText
-                   , function (translatedRawData) {
-
-                       // IMPORTANT: eval is evil but we trust google response :)
-                       var translatedData = eval(translatedRawData);
-
-                       // Set the source language.
-                       var sourceLanguage = document.getElementById('SourceLanguage');
-
-                       if (translatedData && translatedData .length && translatedData[0].length && translatedData[0][0].length) {
-                           $('#TranslatedTextViewer').html(translatedData[0][0][0]);
-                           localStorage["translatedText"] = translatedData[0][0][0];
-                           if (translatedData.length >= 3) {
-                               var sourceLang = $('#targetLanguage option[value="' + translatedData[2] + '"]').html();
-                               $('#SourceLanguage').html(sourceLang);
-                               localStorage["sourceLanguage"] = sourceLang;
-                           }
-                       } else {
-                           $('#TranslatedTextViewer').html('');
-                           $('#SourceLanguage').html('unkown');
-                       }
-
-                       // Disable the loading image.
-                       loaderImage.style.display = 'none';
-                   }, "text");
+							// Disable the loading image.
+                            loaderImage.style.display = 'none';
+						}, "text");					
 				}
 				else{
 					var text = document.getElementById('TranslatedTextViewer');
@@ -140,6 +129,7 @@ function translateSelectedText() {
 
 // Dock or Undock the popup to or from the page.
 function dockPopup(){
+	debugger;
 	var inLine = document.getElementById("InLine");
 	if(inLine.checked == true){
 		chrome.tabs.getSelected(null, function(tab) {		

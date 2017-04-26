@@ -47,35 +47,24 @@ document.addEventListener('mouseup', function (e) {
     var topbar = document.getElementById('topbar');
     if (topbar != null) {
         var selectedText = GetSelectedText().toString();
-
         var select = document.getElementById("targetLanguage");
-
         if (selectedText) {
             chrome.extension.sendMessage({ method: "setTargetLanguage", theTargetLanguage: select.children[select.selectedIndex].value },
 			function (response) {
-			    $.get('https://translate.google.com/translate_a/single?client=t&hl=en&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&dt=at&ie=UTF-8&oe=UTF-8'
-                     + '&sl=auto'
-                     + '&tl=' + response.TargetLanguage
+			    $.get('https://translation.googleapis.com/language/translate/v2?key=SecretKeyGoesHere'
+                     + '&target=' + response.TargetLanguage
                      + '&q=' + selectedText
-                    , function (translatedRawData) {
-
-                        // IMPORTANT: eval is evil but we trust google response :)
-                        var translatedData = eval(translatedRawData);
-
-                        // Set the source language.
-                        var sourceLanguage = document.getElementById('SourceLanguage');
-
-                        if (translatedData && translatedData.length && translatedData[0].length && translatedData[0][0].length) {
-                            $('#TranslatedTextViewer').html(translatedData[0][0][0]);
-                            if (translatedData.length >= 3) {
-                                var sourceLang = $('#targetLanguage option[value="' + translatedData[2] + '"]').html();
-                                $('#SourceLanguage').html(sourceLang);
-                            }
-                        } else {
+                    , function (result) {   
+                        result = JSON.parse(result);                                          
+                        if (result && result.data && result.data.translations && result.data.translations.length) {
+                            var translation = result.data.translations[0];
+                            $('#TranslatedTextViewer').html(translation.translatedText);
+                            var sourceLang = $('#targetLanguage option[value="' + translation.detectedSourceLanguage + '"]').html();
+                            $('#SourceLanguage').html(sourceLang);
+                        }    else {
                             $('#TranslatedTextViewer').html('');
                             $('#SourceLanguage').html('unkown');
                         }
-
                     }, "text");
 			});
         }
